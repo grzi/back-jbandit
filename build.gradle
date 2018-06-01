@@ -1,8 +1,9 @@
 buildscript {
     ext.kotlin_version = '1.2.41' // Required for Kotlin integration
-    ext.spring_boot_version = '1.5.4.RELEASE'
+    ext.spring_boot_version = '2.0.2.RELEASE'
     repositories {
         jcenter()
+        mavenCentral()
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version" // Required for Kotlin integration
@@ -37,11 +38,13 @@ repositories {
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version" // Required for Kotlin integration
-    compile 'org.springframework.boot:spring-boot-starter-web'
-    compile 'org.springframework.boot:spring-boot-starter-data-jpa'
+    compile group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib', version: '1.2.41'
+    compile group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: '1.2.41'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.0.2.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.0.2.RELEASE'
+    compile group: 'org.springframework.security.oauth', name: 'spring-security-oauth2', version: '2.0.2.RELEASE'
     compile group: 'org.postgresql', name: 'postgresql', version: '42.2.2'
-    testCompile('org.springframework.boot:spring-boot-starter-test')
+    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.0.2.RELEASE'
 }
 
 
