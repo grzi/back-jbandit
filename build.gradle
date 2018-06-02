@@ -1,56 +1,57 @@
 buildscript {
-    ext.kotlin_version = '1.2.41' // Required for Kotlin integration
-    ext.spring_boot_version = '2.0.2.RELEASE'
+    ext {
+        kotlinVersion = '1.2.21'
+        springBootVersion = '2.0.0.RC1'
+    }
     repositories {
-        jcenter()
         mavenCentral()
+        maven { url "https://repo.spring.io/snapshot" }
+        maven { url "https://repo.spring.io/milestone" }
     }
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version" // Required for Kotlin integration
-        classpath "org.jetbrains.kotlin:kotlin-allopen:$kotlin_version" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#kotlin-spring-compiler-plugin
-        classpath "org.springframework.boot:spring-boot-gradle-plugin:$spring_boot_version"
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
+        classpath("org.jetbrains.kotlin:kotlin-allopen:${kotlinVersion}")
+        classpath("org.jetbrains.kotlin:kotlin-noarg:${kotlinVersion}")
     }
 }
 
-plugins {
-    id 'java'
-}
-
-group 'fr.thulj.jbandit'
-version '1.0-SNAPSHOT'
-
 apply plugin: 'kotlin'
-apply plugin: "kotlin-spring"
+apply plugin: 'kotlin-spring'
+apply plugin: 'kotlin-allopen'
+apply plugin: 'kotlin-noarg'
+apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
 
-jar {
-    baseName = 'gs-rest-service'
-    version = '0.1.0'
-}
-
+group = 'fr.thulj.corpogames'
+version = '0.0.1-SNAPSHOT'
 sourceCompatibility = 1.8
-sourceSets {
-
-}
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    compile group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib', version: '1.2.41'
-    compile group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: '1.2.41'
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '2.0.2.RELEASE'
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: '2.0.2.RELEASE'
-    compile group: 'org.springframework.security.oauth', name: 'spring-security-oauth2', version: '2.0.2.RELEASE'
-    compile group: 'org.postgresql', name: 'postgresql', version: '42.2.2'
-    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.0.2.RELEASE'
-}
-
-
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+repositories {
+    mavenCentral()
+    maven { url "https://repo.spring.io/snapshot" }
+    maven { url "https://repo.spring.io/milestone" }
+}
+
+noArg {
+    annotation("me.horo.milkyway.annotation.NoArg")
+}
+
+dependencies {
+    compile('org.springframework.boot:spring-boot-starter-websocket')
+    compile('org.springframework.boot:spring-boot-starter-data-jpa')
+    compile('org.springframework.boot:spring-boot-starter-security')
+    compile('org.springframework.security.oauth:spring-security-oauth2:2.2.1.RELEASE')
+    compile('org.liquibase:liquibase-core')
+    compile("org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}")
+    compile("org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}")
+    runtime('org.postgresql:postgresql')
+    testCompile('org.springframework.boot:spring-boot-starter-test')
 }
