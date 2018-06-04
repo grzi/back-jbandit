@@ -1,6 +1,5 @@
 package fr.thulj.corpogames.app
 
-import fr.thulj.corpogames.domain.Survey
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -13,7 +12,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 @EnableAutoConfiguration
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 @ComponentScan(*arrayOf("fr.thulj.corpogames"))
-@EnableJpaRepositories(*arrayOf("fr.thulj.corpogames.dao"))
+@EnableJpaRepositories(*arrayOf("fr.thulj.corpogames.repository"))
 @EntityScan("fr.thulj.corpogames.domain")
 class Application
 
