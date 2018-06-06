@@ -1,4 +1,4 @@
-package me.horo.milkyway.config
+package fr.thulj.corpogames.app
 
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.web.servlet.FilterRegistrationBean
@@ -23,11 +23,15 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.R
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer
+import org.springframework.security.oauth2.provider.ClientDetailsService
+import org.springframework.security.oauth2.provider.approval.TokenStoreUserApprovalHandler
+import org.springframework.security.oauth2.provider.approval.UserApprovalHandler
 import org.springframework.security.oauth2.provider.code.AuthorizationCodeServices
 import org.springframework.security.oauth2.provider.code.JdbcAuthorizationCodeServices
+import org.springframework.security.oauth2.provider.error.OAuth2AccessDeniedHandler
 import org.springframework.security.oauth2.provider.expression.OAuth2MethodSecurityExpressionHandler
+import org.springframework.security.oauth2.provider.request.DefaultOAuth2RequestFactory
 import org.springframework.security.oauth2.provider.token.TokenStore
-import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore
 import org.springframework.security.oauth2.provider.token.store.JdbcTokenStore
 import org.springframework.web.filter.GenericFilterBean
 import javax.servlet.FilterChain
@@ -61,6 +65,10 @@ class SecurityBeansConfig(
         return registry
     }
 
+
+
+
+
 }
 
 @Configuration
@@ -72,9 +80,11 @@ class MethodSecurityConfiguration : GlobalMethodSecurityConfiguration() {
 
 @Configuration
 @EnableWebSecurity
-class WebSecurityConfiguration(
+class WebSecurityConfig(
         @Qualifier("userDetailsServiceImpl")
-        private val userDetailsService: UserDetailsService
+        private val userDetailsService: UserDetailsService,
+        private val clientDetailService : ClientDetailsService,
+        private val tokenStore: TokenStore
 ) : WebSecurityConfigurerAdapter() {
 
     override fun configure(auth: AuthenticationManagerBuilder) {
@@ -82,12 +92,24 @@ class WebSecurityConfiguration(
     }
 
     override fun configure(http: HttpSecurity) {
-      http.cors().and().authorizeRequests().anyRequest().authenticated()
+        http
+                .csrf().disable()
+                .anonymous().disable()
+                .authorizeRequests()
+                .antMatchers("/oauth/token").permitAll();
     }
 
     @Bean
     override fun authenticationManagerBean(): AuthenticationManager = super.authenticationManagerBean()
 
+    @Bean
+    fun userApprovalHandler() : TokenStoreUserApprovalHandler{
+        var tokenStoreHandler = TokenStoreUserApprovalHandler()
+        tokenStoreHandler.setTokenStore(tokenStore)
+        tokenStoreHandler.setRequestFactory(DefaultOAuth2RequestFactory(clientDetailService))
+        tokenStoreHandler.setClientDetailsService(clientDetailService)
+        return tokenStoreHandler
+    }
 
 }
 
@@ -97,14 +119,19 @@ class OAuth2ResourceServerConfiguration(
         private val tokenStore: TokenStore
 ) : ResourceServerConfigurerAdapter() {
 
-    val RESOURCE_ID = "my_api"
+    val RESOURCE_ID = "myclient"
 
     override fun configure(resources: ResourceServerSecurityConfigurer) {
         resources.tokenStore(tokenStore).resourceId(RESOURCE_ID)
     }
 
     override fun configure(http: HttpSecurity) {
-        http.authorizeRequests().anyRequest().authenticated()
+        http.anonymous().disable()
+                .requestMatchers().antMatchers("/api/**")
+                .and().authorizeRequests()
+                .antMatchers("/api/**").access("hasRole('ADMIN')")
+                .and().exceptionHandling().accessDeniedHandler(OAuth2AccessDeniedHandler()).and()
+                .authorizeRequests().antMatchers("/oauth/token").permitAll()
     }
 }
 
@@ -119,29 +146,31 @@ class OAuth2AuthorizationServerConfiguration(
         private val passwordEncoder: PasswordEncoder,
         private val authorizationCodeServices: AuthorizationCodeServices,
         @Qualifier("userDetailsServiceImpl")
-        private val userDetailsService: UserDetailsService
+        private val userDetailsService: UserDetailsService,
+        private val userApprovalHandler : UserApprovalHandler
 ) : AuthorizationServerConfigurerAdapter() {
 
     override fun configure(clients: ClientDetailsServiceConfigurer) {
         clients.jdbc(dataSource).passwordEncoder(passwordEncoder)
-                .withClient("my-client")
-                .authorizedGrantTypes("password", "authorization_code", "refresh_token", "implicit")
-                .authorities("ROLE_CLIENT", "ROLE_TRUSTED_CLIENT")
-                .scopes("read", "write", "trust")
+                .withClient("client")
                 .secret("secret")
-                .accessTokenValiditySeconds(120)
-                .refreshTokenValiditySeconds(600);
+                .authorizedGrantTypes(
+                        "password","authorization_code", "refresh_token")
+                .scopes("read")
     }
 
     override fun configure(endpoints: AuthorizationServerEndpointsConfigurer) {
         endpoints.authorizationCodeServices(authorizationCodeServices)
                 .authenticationManager(authenticationManager)
-                .tokenStore(tokenStore)
+                .tokenStore(tokenStore)//.userApprovalHandler(userApprovalHandler)
                 .userDetailsService(userDetailsService)
     }
 
-    override fun configure(security: AuthorizationServerSecurityConfigurer) {
-        security.realm("myclient").checkTokenAccess("isAuthenticated()")
+    override fun configure(oauthServer: AuthorizationServerSecurityConfigurer) {
+        oauthServer
+                .tokenKeyAccess("permitAll()")
+                .checkTokenAccess("isAuthenticated()");
+
     }
 }
 
@@ -149,6 +178,7 @@ class OAuth2AuthorizationServerConfiguration(
 /* Filtre des request pour ajouter des header aux retours */
 class OAuth2TokenFilter : GenericFilterBean() {
     override fun doFilter(servletRequest: ServletRequest?, servletResponse: ServletResponse?, chain: FilterChain) {
+
         val response = servletResponse as HttpServletResponse
         val request = servletRequest as HttpServletRequest
 

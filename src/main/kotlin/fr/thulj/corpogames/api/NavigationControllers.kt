@@ -8,12 +8,15 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/navigation")
-class NavigationController {
-
+@RequestMapping("/navigation")
+class HomePageController : PublicApi() {
     @GetMapping("/home")
-    fun homePage()= PageInfos<String>("homePage", "Welcome to the website", "/", null)
+    fun homePage()= PageInfos<String>("Page d'accueil", "Bienvenue sur le site web", "/", null)
+}
 
-
-
+@RestController
+@RequestMapping("/navigation")
+class UserPageController : SecuredApi(){
+    @GetMapping("/user")
+    fun userPage() = PageInfos<String>("Page de gestion de compte", "Gérez votre compte ici", "/userSettings", null)
 }
