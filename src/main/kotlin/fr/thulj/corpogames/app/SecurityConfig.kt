@@ -64,11 +64,6 @@ class SecurityBeansConfig(
         registry.urlPatterns = listOf("/oauth/token")
         return registry
     }
-
-
-
-
-
 }
 
 @Configuration
@@ -84,11 +79,12 @@ class WebSecurityConfig(
         @Qualifier("userDetailsServiceImpl")
         private val userDetailsService: UserDetailsService,
         private val clientDetailService : ClientDetailsService,
+        private val passwordEncoder: PasswordEncoder,
         private val tokenStore: TokenStore
 ) : WebSecurityConfigurerAdapter() {
 
     override fun configure(auth: AuthenticationManagerBuilder) {
-        auth.userDetailsService(userDetailsService)
+        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder)
     }
 
     override fun configure(http: HttpSecurity) {
@@ -127,11 +123,13 @@ class OAuth2ResourceServerConfiguration(
 
     override fun configure(http: HttpSecurity) {
         http.anonymous().disable()
-                .requestMatchers().antMatchers("/api/**")
-                .and().authorizeRequests()
-                .antMatchers("/api/**").access("hasRole('ADMIN')")
-                .and().exceptionHandling().accessDeniedHandler(OAuth2AccessDeniedHandler()).and()
-                .authorizeRequests().antMatchers("/oauth/token").permitAll()
+                    .authorizeRequests()
+                    .antMatchers("/secured/").access("hasRole('USER')")
+                .and()
+                    .exceptionHandling().accessDeniedHandler(OAuth2AccessDeniedHandler()).and()
+                    .authorizeRequests().antMatchers("/oauth/token").permitAll()
+                .and()
+                    .authorizeRequests().antMatchers("/api/**").permitAll()
     }
 }
 
@@ -151,18 +149,13 @@ class OAuth2AuthorizationServerConfiguration(
 ) : AuthorizationServerConfigurerAdapter() {
 
     override fun configure(clients: ClientDetailsServiceConfigurer) {
-        clients.jdbc(dataSource).passwordEncoder(passwordEncoder)
-                .withClient("client")
-                .secret("secret")
-                .authorizedGrantTypes(
-                        "password","authorization_code", "refresh_token")
-                .scopes("read")
+        clients.jdbc(dataSource)
     }
 
     override fun configure(endpoints: AuthorizationServerEndpointsConfigurer) {
         endpoints.authorizationCodeServices(authorizationCodeServices)
                 .authenticationManager(authenticationManager)
-                .tokenStore(tokenStore)//.userApprovalHandler(userApprovalHandler)
+                .tokenStore(tokenStore).userApprovalHandler(userApprovalHandler)
                 .userDetailsService(userDetailsService)
     }
 
