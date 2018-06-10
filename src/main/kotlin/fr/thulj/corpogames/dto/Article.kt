@@ -1,6 +1,6 @@
-package fr.thulj.corpogames.model
+package fr.thulj.corpogames.dto
 
-data class ArticleHead(
+data class ArticleHeadDTO(
         var title : String,
         var link : String,
         var img : String,
@@ -10,8 +10,8 @@ data class ArticleHead(
         var type : String
 )
 
-data class Article(
-        var head : ArticleHead,
+data class ArticleDTO(
+        var head : ArticleHeadDTO,
         var content : String
 )
 

@@ -122,14 +122,14 @@ class OAuth2ResourceServerConfiguration(
     }
 
     override fun configure(http: HttpSecurity) {
-        http.anonymous().disable()
+        http
                     .authorizeRequests()
-                    .antMatchers("/secured/").access("hasRole('USER')")
+                    .antMatchers("/api/secured/**").access("hasRole('USER')")
                 .and()
                     .exceptionHandling().accessDeniedHandler(OAuth2AccessDeniedHandler()).and()
                     .authorizeRequests().antMatchers("/oauth/token").permitAll()
                 .and()
-                    .authorizeRequests().antMatchers("/api/**").permitAll()
+                    .authorizeRequests().antMatchers("/api/public/**").permitAll()
     }
 }
 
