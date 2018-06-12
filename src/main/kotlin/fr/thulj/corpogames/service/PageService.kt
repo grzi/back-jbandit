@@ -1,6 +1,5 @@
 package fr.thulj.corpogames.service
 
-import fr.thulj.corpogames.domain.Article
 import fr.thulj.corpogames.domain.ArticleHead
 import fr.thulj.corpogames.dto.ArticleDTO
 import fr.thulj.corpogames.dto.ArticleHeadDTO
